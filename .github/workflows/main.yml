@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout Repository Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          submodules: recursive  # Ensures initialization of known submodules
+          submodules: recursive  # This ensures all submodules are checked out
 
       - name: Setup Python Environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
           
