@@ -53,7 +53,9 @@ def train(
     for p in optimizer.param_groups:
         p["lr"] = hp.voc_lr
     loss_func = (
-        F.cross_entropy if model.mode == "RAW" else discretized_mix_logistic_loss
+        F.cross_entropy
+        if model.mode == "RAW"
+        else discretized_mix_logistic_loss
     )
 
     # Load the weights
@@ -74,8 +76,11 @@ def train(
         if ground_truth
         else voc_dir.joinpath("synthesized.txt")
     )
-    mel_dir = syn_dir.joinpath(
-        "mels") if ground_truth else voc_dir.joinpath("mels_gta")
+    mel_dir = (
+        syn_dir.joinpath("mels")
+        if ground_truth
+        else voc_dir.joinpath("mels_gta")
+    )
     wav_dir = syn_dir.joinpath("audio")
     dataset = VocoderDataset(metadata_fpath, mel_dir, wav_dir)
     test_loader = DataLoader(dataset, batch_size=1, shuffle=True)

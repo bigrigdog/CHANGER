@@ -28,7 +28,9 @@ if __name__ == "__main__":
         help="Directory containing all saved models",
     )
     parser.add_argument(
-        "--cpu", action="store_true", help="If True, all inference will be done on CPU"
+        "--cpu",
+        action="store_true",
+        help="If True, all inference will be done on CPU",
     )
     parser.add_argument(
         "--seed",

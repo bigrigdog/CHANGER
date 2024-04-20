@@ -44,7 +44,12 @@ def is_loaded():
 
 
 def infer_waveform(
-    mel, normalize=True, batched=True, target=8000, overlap=800, progress_callback=None
+    mel,
+    normalize=True,
+    batched=True,
+    target=8000,
+    overlap=800,
+    progress_callback=None,
 ):
     """
     Infers the waveform of a mel spectrogram output by the synthesizer (the format must match
@@ -62,6 +67,7 @@ def infer_waveform(
     if normalize:
         mel = mel / hp.mel_max_abs_value
     mel = torch.from_numpy(mel[None, ...])
-    wav = _model.generate(mel, batched, target, overlap,
-                          hp.mu_law, progress_callback)
+    wav = _model.generate(
+        mel, batched, target, overlap, hp.mu_law, progress_callback
+    )
     return wav

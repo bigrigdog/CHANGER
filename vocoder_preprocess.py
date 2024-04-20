@@ -9,7 +9,8 @@ from utils.argutils import print_args
 if __name__ == "__main__":
 
     class MyFormatter(
-        argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
+        argparse.ArgumentDefaultsHelpFormatter,
+        argparse.RawDescriptionHelpFormatter,
     ):
         pass
 

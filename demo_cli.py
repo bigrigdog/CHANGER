@@ -61,12 +61,14 @@ def trim_silences(wav):
     if non_silent_indices.size > 0:
         start_index = non_silent_indices[0]
         end_index = non_silent_indices[-1]
-        return wav[start_index: end_index + 1]
+        return wav[start_index : end_index + 1]
     else:
         return wav
 
 
-def normalize_volume(wav, target_dBFS, increase_only=False, decrease_only=False):
+def normalize_volume(
+    wav, target_dBFS, increase_only=False, decrease_only=False
+):
     """
     Normalizes the volume of a waveform to a target decibel Full Scale (dBFS).
     Allows specification to only increase or decrease the volume.
@@ -74,7 +76,9 @@ def normalize_volume(wav, target_dBFS, increase_only=False, decrease_only=False)
     rms = np.sqrt(np.mean(wav**2))
     desired_gain = 10 ** ((target_dBFS - 20 * np.log10(rms)) / 20)
 
-    if (desired_gain < 1.0 and increase_only) or (desired_gain > 1.0 and decrease_only):
+    if (desired_gain < 1.0 and increase_only) or (
+        desired_gain > 1.0 and decrease_only
+    ):
         return wav
     return wav * desired_gain
 
@@ -89,7 +93,8 @@ if __name__ == "__main__":
 
         # Preprocess the audio data
         preprocessed_audio = preprocess_wav(
-            audio_data, source_sr=sampling_rate)
+            audio_data, source_sr=sampling_rate
+        )
 
         # You can inspect the preprocessed audio data or perform further processing with it
         print("Shape of preprocessed audio:", preprocessed_audio.shape)

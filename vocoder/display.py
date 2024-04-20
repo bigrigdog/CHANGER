@@ -44,7 +44,7 @@ def simple_table(item_tuples):
         pad = whitespace[:pad]
 
         pad_left = pad[: len(pad) // 2]
-        pad_right = pad[len(pad) // 2:]
+        pad_right = pad[len(pad) // 2 :]
 
         if pad_head:
             heading = pad_left + heading + pad_right

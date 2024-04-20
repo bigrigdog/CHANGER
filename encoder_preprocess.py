@@ -1,14 +1,18 @@
 import argparse
 from pathlib import Path
 
-from encoder.preprocess import (preprocess_librispeech, preprocess_voxceleb1,
-                                preprocess_voxceleb2)
+from encoder.preprocess import (
+    preprocess_librispeech,
+    preprocess_voxceleb1,
+    preprocess_voxceleb2,
+)
 from utils.argutils import print_args
 
 if __name__ == "__main__":
 
     class MyFormatter(
-        argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
+        argparse.ArgumentDefaultsHelpFormatter,
+        argparse.RawDescriptionHelpFormatter,
     ):
         pass
 

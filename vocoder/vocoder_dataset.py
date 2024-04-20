@@ -11,8 +11,8 @@ from vocoder import audio
 class VocoderDataset(Dataset):
     def __init__(self, metadata_fpath: Path, mel_dir: Path, wav_dir: Path):
         print(
-            "Using inputs from:\n\t%s\n\t%s\n\t%s" % (
-                metadata_fpath, mel_dir, wav_dir)
+            "Using inputs from:\n\t%s\n\t%s\n\t%s"
+            % (metadata_fpath, mel_dir, wav_dir)
         )
 
         with metadata_fpath.open("r") as metadata_file:
@@ -62,18 +62,21 @@ class VocoderDataset(Dataset):
 
 def collate_vocoder(batch):
     mel_win = hp.voc_seq_len // hp.hop_length + 2 * hp.voc_pad
-    max_offsets = [x[0].shape[-1] - 2 -
-                   (mel_win + 2 * hp.voc_pad) for x in batch]
+    max_offsets = [
+        x[0].shape[-1] - 2 - (mel_win + 2 * hp.voc_pad) for x in batch
+    ]
     mel_offsets = [np.random.randint(0, offset) for offset in max_offsets]
-    sig_offsets = [(offset + hp.voc_pad) *
-                   hp.hop_length for offset in mel_offsets]
+    sig_offsets = [
+        (offset + hp.voc_pad) * hp.hop_length for offset in mel_offsets
+    ]
 
     mels = [
-        x[0][:, mel_offsets[i]: mel_offsets[i] + mel_win] for i, x in enumerate(batch)
+        x[0][:, mel_offsets[i] : mel_offsets[i] + mel_win]
+        for i, x in enumerate(batch)
     ]
 
     labels = [
-        x[1][sig_offsets[i]: sig_offsets[i] + hp.voc_seq_len + 1]
+        x[1][sig_offsets[i] : sig_offsets[i] + hp.voc_seq_len + 1]
         for i, x in enumerate(batch)
     ]
 

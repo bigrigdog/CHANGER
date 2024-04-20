@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+
 def fix_line_lengths(root_directory):
     for subdir, dirs, files in os.walk(root_directory):
         for file in files:
@@ -8,8 +9,9 @@ def fix_line_lengths(root_directory):
                 filepath = os.path.join(subdir, file)
                 subprocess.run(["black", "-l", "79", filepath], check=True)
 
+
 if __name__ == "__main__":
-    root_directory = '.'  # Root of the repository
+    root_directory = "."  # Root of the repository
 
     try:
         fix_line_lengths(root_directory)

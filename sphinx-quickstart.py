@@ -1,9 +1,21 @@
 import os
 import subprocess
 
+
 def create_sphinx_docs(project_name, author_name, project_release):
     # Step 1: Initialize Sphinx
-    subprocess.run(["sphinx-quickstart", "-q", "-p", project_name, "-a", author_name, "-r", project_release])
+    subprocess.run(
+        [
+            "sphinx-quickstart",
+            "-q",
+            "-p",
+            project_name,
+            "-a",
+            author_name,
+            "-r",
+            project_release,
+        ]
+    )
 
     # Step 2: Edit index.rst and create additional documentation files
 
@@ -12,6 +24,7 @@ def create_sphinx_docs(project_name, author_name, project_release):
     subprocess.run(["make", "html"])
 
     print("Documentation built successfully!")
+
 
 if __name__ == "__main__":
     project_name = input("Enter the project name: ")

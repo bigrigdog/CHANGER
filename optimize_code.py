@@ -1,9 +1,10 @@
 import openai
 import os
 
+
 def optimize_python_code(file_path, api_key):
     """Uses OpenAI's Codex to refactor and optimize Python code dynamically."""
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         original_code = file.read()
 
     prompt = f"### Refactor and optimize this Python code with explanations\n{original_code}\n###"
@@ -15,19 +16,20 @@ def optimize_python_code(file_path, api_key):
         top_p=1.0,
         frequency_penalty=0.0,
         presence_penalty=0.0,
-        api_key=api_key
+        api_key=api_key,
     )
     improved_code = response.choices[0].text.strip()
 
     if improved_code and improved_code != original_code:
-        with open(file_path, 'w', encoding='utf-8') as file:
+        with open(file_path, "w", encoding="utf-8") as file:
             file.write(improved_code)
         return True
     return False
 
+
 if __name__ == "__main__":
     api_key = os.getenv("OPENAI_API_KEY")
-    root_directory = '.'  # Root of the repository
+    root_directory = "."  # Root of the repository
     files_updated = 0
 
     for subdir, dirs, files in os.walk(root_directory):

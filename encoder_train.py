@@ -69,10 +69,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Do not load any saved model.",
     )
-    parser.add_argument("--visdom_server", type=str,
-                        default="http://localhost")
-    parser.add_argument("--no_visdom", action="store_true",
-                        help="Disable visdom.")
+    parser.add_argument(
+        "--visdom_server", type=str, default="http://localhost"
+    )
+    parser.add_argument(
+        "--no_visdom", action="store_true", help="Disable visdom."
+    )
     args = parser.parse_args()
 
     # Run the training
