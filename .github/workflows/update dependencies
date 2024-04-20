@@ -1,0 +1,30 @@
+name: Dependency Updates
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Compile requirements
+        run: pip-compile --upgrade requirements.in
+
+      - name: Commit and push if changes
+        run: |
+          git config --global user.name 'dependabot[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add requirements.txt
+          git commit -m "Update dependencies" -a || echo "No changes to commit"
+          git push
