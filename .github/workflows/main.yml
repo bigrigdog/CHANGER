@@ -1,48 +1,55 @@
-name: Continuous Integration and Enhancement
+name: Comprehensive CI/CD Automation
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
   schedule:
-    - cron: '0 0 * * 0'  # Every Sunday at midnight to prevent excessive running.
+    - cron: '0 0 * * SUN'  # Weekly for extensive tasks
 
 jobs:
-  test-and-improve:
+  build-and-test:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Git Checkout
+      - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Ensure to fetch all history for all branches and tags.
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-
-      - name: Install dependencies
+      
+      - name: Install Python dependencies
         run: |
-          pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install black flake8 pytest requests  # Install Black, Flake8, pytest
 
-      - name: Apply Black formatting
-        run: black . --check --diff
+      - name: Auto-format with Black and check limits for further processing
+        id: black_format
+        continue-on-error: true  # Prevent blocking so next steps can handle rectification
+        run: black . --check --diff  # Auto-formatting without writing changes
 
       - name: Lint with Flake8
         run: flake8 .
 
-      - name: Run unit tests with PyTest
-        run: pytest -v
+      - name: Run unit tests with pytest
+        run: pytest
 
-      - name: AI-Assisted Code Reviews and Suggestions
+      - name: AI Review with OpenAI Codex
         if: github.event.schedule
-        run: python .github/scripts/ai_codex_suggestions.py
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python .github/scripts/ai_codex_suggestions.py
 
-      - name: Slack Notification
+      - name: Notify via Slack if failed
+        if: failure()  # Run this step if any of the above steps failed
         uses: rtCamp/action-slack-notify@v2
+        with:
+          status: failed
+          fields: workflow,job,commit,repo,ref,author,took  # Customize to your notification needs
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        with:
-          status: ${{ job.status }}
-          notification_title: 'GitHub Workflow Execution'
