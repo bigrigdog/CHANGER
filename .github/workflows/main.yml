@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
+        with:
+          submodules: true  # Remove or comment out this line if you are sure you don't need submodules
 
       - name: Setup Python Environment
         uses: actions/setup-python@v4
@@ -26,8 +28,8 @@ jobs:
 
       - name: Format Code with Black
         run: |
-          black . --diff
-          
+          black . --check --diff || echo "Black formatting issues detected"
+
       - name: Lint with Flake8
         run: |
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
@@ -41,6 +43,6 @@ jobs:
           sphinx-build -b html ./docs/source ./docs/build
 
       - name: Slack Notification
-        if: always()
+        if: always()  # This ensures this step will run regardless of the previous steps' success or failure
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
