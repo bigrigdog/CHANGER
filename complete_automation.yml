@@ -1,0 +1,65 @@
+name: Complete Automation and Expansion Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  schedule:
+    - cron: '0 2 * * 1'  # Run analysis and AI improvement once a week
+
+jobs:
+  automate-project-upkeep:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Cache Python Packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt black flake8 pytest
+      
+      - name: Run Code Formatting with Black
+        run: |
+          black --check --diff .
+          
+      - name: Lint Code with Flake8
+        run: |
+          flake8 . --extend-ignore E203
+
+      - name: Run Tests
+        run: |
+          pytest --verbose
+      
+      # AI Code Review section, executed periodically by schedule to manage API utilization
+      - name: Weekly AI-based Code Review and Improvement Stage
+        if: github.event.schedule
+        run: |
+          python .github/scripts/ai_enhance_project.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Slack Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        with:
+          status: failure
+          fields: job,ref,commit,author,action,eventName
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
