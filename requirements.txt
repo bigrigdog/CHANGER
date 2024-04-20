@@ -65,7 +65,7 @@ jupyter-core==4.10.0
 jupyterlab==3.4.4
 jupyterlab-pygments==0.2.2
 jupyterlab-server==2.14.0
-jupyterlab-widgets==1.1.0
+jupyterlab-widgets
 keras==2.9.0
 kiwisolver==1.4.3
 lazy-loader==0.4
