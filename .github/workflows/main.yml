@@ -13,24 +13,22 @@ jobs:
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive  # This ensures all submodules are checked out
-
+        
       - name: Setup Python Environment
         uses: actions/setup-python@v4
         with:
           python-version: '3.8'
-          
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8 pytest sphinx
+          pip list
+
       - name: Setup Environment Paths
         run: |
           echo "/opt/hostedtoolcache/Python/3.8.18/x64/bin" >> $GITHUB_PATH
           echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
-      - name: Install and List Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install black flake8 pytest sphinx
-          pip list  # Outputs the list of installed packages for verification
 
       - name: Auto-formatting with Black and Linting with Flake8
         run: |
@@ -41,16 +39,16 @@ jobs:
         run: |
           pytest -vv
 
-      - name: Generate Docs with Sphinx
+      - name: Generate Documentation with Sphinx
         run: |
           sphinx-build -b html ./docs/source ./docs/build
 
-      - name: Cleanup and Finalize
+      - name: Cleanup Temporary Files
         run: |
-          find . -name "*.tmp" -delete  # Example cleanup operation
+          find . -name "*.tmp" -delete
 
       - name: Notify on Slack with Workflow Status
-        if: always()  # Ensures notification triggers on both success and failure
+        if: always()  # This ensures that the notification step will run regardless of previous steps' success or failure.
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
