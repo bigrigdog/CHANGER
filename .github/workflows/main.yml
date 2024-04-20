@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
-        with:
-          submodules: true  # Attempts to checkout submodules. Change to 'recursive' if nested submodules exist.
 
       - name: Setup Python Environment
         uses: actions/setup-python@v4
