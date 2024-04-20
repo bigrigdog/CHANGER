@@ -2,50 +2,47 @@ name: Comprehensive CI/CD Automation
 
 on:
   push:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-  schedule:
-    - cron: '0 2 * * 1'  # Every early Monday to manage usage
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths-ignore: 
+      - '**/*.md'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+    - name: Checkout Repository Code
+      uses: actions/checkout@v2
+      
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
 
-      - name: Set Up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
+    - name: Formatting Python Code with Black
+      run: black --check --diff --quiet .
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install black flake8 pytest
+    - name: Lint with flake8
+      run: flake8 . --extend-ignore=E501
+    
+    - name: Run Automated Tests
+      run: |
+        pytest
 
-      - name: Format Code
-        run: black . --diff --quiet
+    - name: Auto-Fix and Validation Checks
+      run: python .github/scripts/fix_and_validate.py
 
-      - name: Lint with Flake8 ignoring line lengths and undefined names
-        run: flake8 . --extend-ignore=E501,F405
-
-      - name: Run Tests
-        run: pytest
-
-      - name: Perform AI-Powered Code Improvements (Run Weekly)
-        if: github.event_name == 'schedule'
-        run: |
-          python .github/scripts/enhance_code.py
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: Notify on Slack
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        with:
-          status: ${{ job.status }}
-          notify_on: 'failure'
+    - name: Notify on Slack
+      if: failure()
+      uses: rtCamp/action-slack-notify@v2
+      with:
+        status: ${{ job.status }}
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
