@@ -44,4 +44,3 @@ jobs:
         if: always()
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
-
