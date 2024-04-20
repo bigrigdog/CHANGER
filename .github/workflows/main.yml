@@ -25,18 +25,9 @@ jobs:
           pip install black flake8 pytest sphinx
           pip list
 
-      - name: Setup Environment Paths
-        run: |
-          echo "/opt/hostedtoolcache/Python/3.8.18/x64/bin" >> $GITHUB_PATH
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
       - name: Auto-formatting with Black and Linting with Flake8
         run: |
-          black --check --diff .
-          if [ $? -ne 0 ]; then
-            echo "Code formatting issues found."
-            exit 1  # Fail the workflow if formatting issues are found
-          fi
+          black --check --diff . || echo "Black found formatting issues" && false
           flake8 . --extend-ignore=E501,F405
 
       - name: Execute Tests
@@ -51,31 +42,15 @@ jobs:
         run: |
           find . -name "*.tmp" -delete
 
-      - name: Prepare Slack Notification
-        id: prep
-        shell: bash
-        run: |
-          echo "::set-output name=color::$(if [[ '${{ job.status }}' == 'success' ]]; then echo 'good'; else echo 'danger'; fi)"
-
       - name: Notify on Slack with Workflow Status
-        if: always()
+        if: always()  # Ensures this step runs whether previous steps failed or succeeded.
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         with:
-          custom_payload: |
-            {
-              "text": "Workflow *${{ github.workflow }}* on *${{ github.repository }}*",
-              "attachments": [
-                {
-                  "color": "${{ steps.prep.outputs.color }}",
-                  "fields": [
-                    {"title": "Job", "value": "${{ github.job }}", "short": true},
-                    {"title": "Status", "value": "${{ job.status }}", "short": true},
-                    {"title": "Actor", "value": "${{ github.actor }}", "short": true},
-                    {"title": "Commit", "value": "${{ github.sha }}", "short": true},
-                    {"title": "Ref", "value": "${{ github.ref }}", "short": true}
-                  ]
-                }
-              ]
-            }
+          status: ${{ job.status }}
+          channel: C0708A8KK97
+          username: GitHub Actions
+          icon_url: https://avatars3.githubusercontent.com/u/44036562?s=200&v=4
+          title: Workflow Execution Result
+          text: "The workflow *${{ github.workflow }}* on *${{ github.repository }}* has completed."
