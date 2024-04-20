@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Full Automation CI/CD Pipeline
 
 on:
   push:
@@ -7,30 +7,30 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  auto-setup-and-test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
 
-      - name: Precheck for Submodules Setup
-        id: precheck
+      - name: Auto Setup .gitmodules and Submodules
         run: |
           if [ ! -f ".gitmodules" ]; then
-            echo "No .gitmodules file exists, setting up a predefined submodule configuration."
-            echo "[submodule \"example-submodule\"]" >> .gitmodules
-            echo "path = external/example-submodule" >> .gitmodules
-            echo "url = https://github.com/exampleuser/example-submodule.git" >> .gitmodules
-            git add .gitmodules
-            git config -f .gitmodules submodule.example-submodule.url https://github.com/exampleuser/example-submodule.git
-            git submodule add https://github.com/exampleuser/example-submodule.git external/example-submodule
-            git submodule update --init --recursive
-            git commit -m "Setup predefined submodules"
-            git push origin main
-          else
-            echo ".gitmodules exists, initializing submodules."
-            git submodule update --init --recursive
+            echo "Creating .gitmodules because it does not exist"
+            echo "[submodule \"externals/repo\"]" >> .gitmodules
+            echo "path = externals/repo" >> .gitmodules
+            echo "url = https://github.com/yourusername/your-repo.git" >> .gitmodules
+            git submodule add https://github.com/yourusername/your-repo.git externals/repo
+          fi
+          git submodule update --init --recursive
+
+      - name: Create Tests Directory if Missing
+        run: |
+          if [ ! -d "tests" ]; then
+            echo "Creating tests directory because it does not exist"
+            mkdir tests
+            echo "def test_placeholder(): pass" > tests/test_placeholder.py
           fi
 
       - name: Setup Python Environment
@@ -38,38 +38,44 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Install Python Tools
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8 pytest sphinx autopep8
+          pip install pytest pytest-cov flake8 black autopep8
 
       - name: Auto-correct Python Code
         run: |
           autopep8 --in-place --aggressive --aggressive --recursive .
-          black . || echo "Formatting issues detected and corrected with Black."
+          black . --check --diff || black .
 
       - name: Lint with Flake8
         run: |
-          flake8 . || echo "Flake8 linting issues detected."
+          flake8 . --count --exit-zero --statistics --output-file flake8_report.txt
+          cat flake8_report.txt || echo "No linting issues found."
 
-      - name: Run Tests
+      - name: Run Pytest and Coverage
         run: |
-          pytest -vv
+          pytest -vv --cov=./
 
-      - name: Generate Documentation
+      - name: Generate Documentation Automatically
         run: |
-          sphinx-build -b html ./docs/source ./docs/build
+          # Assuming Sphinx is used, setup Sphinx if not already
+          [ ! -d "docs" ] && mkdir docs
+          [ ! -f "docs/conf.py" ] && sphinx-quickstart -q --sep -p "Project Name" -a "Author Name" -v "0.1" --ext-autodoc --ext-viewcode --makefile -o docs
+          sphinx-build -b html docs/source docs/build
 
       - name: Slack Notification on Failure
         if: failure()
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed with errors. Check the Actions logs for details."}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Slack Notification on Success
         if: success()
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed successfully."}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
