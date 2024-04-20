@@ -1,0 +1,24 @@
+﻿# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.class
+
+# Environments
+env/
+env_backup/
+*.venv
+*.conda
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Large files (these should be stored with Git LFS or outside of Git)
+*.mp3
+*.pt
+*.zip
+*.pyc
