@@ -1,48 +1,48 @@
-name: Comprehensive Repository CI
+name: Continuous Integration and Enhancement
 
-on: 
+on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight to prevent excessive running.
 
 jobs:
-  complete-check:
-    
+  test-and-improve:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-    
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest black
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    
-    - name: Format Python code with Black
-      run: black .
-    
-    - name: Lint with Flake8
-      continue-on-error: true # Allows workflow to continue even if linting fails; adjust as needed
-      run: |
-        # stops the workflow if errors exceed the max line length or there are syntax errors
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Configurable for non-blocking warnings and subtler issues
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
-    - name: Run Tests with Pytest
-      run: pytest .
-    
-    # Implement additional job steps if required, e.g., deploying services, artifact storage, notifications, etc.
-    - name: Notify Slack about CI results
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      if: always() # Ensures that tessellation results are reported regardless of success or failure
+      - name: Git Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Apply Black formatting
+        run: black . --check --diff
+
+      - name: Lint with Flake8
+        run: flake8 .
+
+      - name: Run unit tests with PyTest
+        run: pytest -v
+
+      - name: AI-Assisted Code Reviews and Suggestions
+        if: github.event.schedule
+        run: python .github/scripts/ai_codex_suggestions.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          status: ${{ job.status }}
+          notification_title: 'GitHub Workflow Execution'
