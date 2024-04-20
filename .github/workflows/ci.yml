@@ -1,10 +1,7 @@
-name: CI
+name: Continuous Integration
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -13,34 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.10
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install flake8 pytest
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
 
-      - name: Lint code
-        run: flake8 .
+    - name: Install dependencies
+      run: |
+        pip install flake8 pytest
 
-      - name: Run tests
-        run: pytest
+    - name: Run flake8
+      run: flake8 .
 
-      - name: Optimize Python code
-        run: python optimize_code.py
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    - name: Run pytest
+      run: pytest
 
-      - name: Configure Git user
-        run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions@github.com'
+    - name: Run optimize_code.py
+      run: python optimize_code.py
+      env:
+        API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-      - name: Notify Slack
-        uses: rtCamp/action-slack-notify@v2
-        with:
-          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+    - name: Configure git
+      run: git config --global user.name 'GitHub Actions Bot'
 
+    - name: Notify on Slack
+      uses: rtCamp/action-slack-notify@v2
+      with:
+        slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+
+    - name: Post job cleanup
+      run: |
+        git config --global --add safe.directory /home/runner/work/CHANGER/CHANGER
+        git config --local --name-only --get-regexp core\.sshCommand
+        git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
