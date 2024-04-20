@@ -13,7 +13,9 @@ jobs:
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
-        
+        with:
+          submodules: true  # Attempts to checkout submodules. Change to 'recursive' if nested submodules exist.
+
       - name: Setup Python Environment
         uses: actions/setup-python@v4
         with:
@@ -53,5 +55,19 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         with:
-          status: ${{ job.status }}
-          fields: 'job,ref,commit,repo,author'
+          custom_payload: |
+            {
+              "text": "Workflow *${{ github.workflow }}* on *${{ github.repository }}*",
+              "attachments": [
+                {
+                  "color": "${{ job.status == 'success' ? 'good' : 'danger' }}",
+                  "fields": [
+                    {"title": "Job", "value": "${{ github.job }}", "short": true},
+                    {"title": "Status", "value": "${{ job.status }}", "short": true},
+                    {"title": "Actor", "value": "${{ github.actor }}", "short": true},
+                    {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                    {"title": "Ref", "value": "${{ github.ref }}", "short": true}
+                  ]
+                }
+              ]
+            }
