@@ -65,7 +65,7 @@ jupyter-core
 jupyterlab
 jupyterlab-pygments
 jupyterlab-server
-jupyterlab-widgets
+jupyterlab-widgets>=1.1.0
 keras
 kiwisolver
 lazy-loader
