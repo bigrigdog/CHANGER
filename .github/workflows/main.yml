@@ -1,0 +1,48 @@
+name: Continuous Integration and Enhancement
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight to prevent excessive running.
+
+jobs:
+  test-and-improve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Apply Black formatting
+        run: black . --check --diff
+
+      - name: Lint with Flake8
+        run: flake8 .
+
+      - name: Run unit tests with PyTest
+        run: pytest -v
+
+      - name: AI-Assisted Code Reviews and Suggestions
+        if: github.event.schedule
+        run: python .github/scripts/ai_codex_suggestions.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          status: ${{ job.status }}
+          notification_title: 'GitHub Workflow Execution'
