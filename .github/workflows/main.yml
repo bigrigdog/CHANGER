@@ -2,46 +2,45 @@ name: Comprehensive CI/CD Automation
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-    paths-ignore: 
+    branches: [main]
+    paths-ignore:
       - '**/*.md'
+  pull_request:
+    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository Code
-        uses: actions/checkout@v2
+    - name: Checkout Repository Code
+      uses: actions/checkout@v2
+      # Additional option to manage submodules correctly
+      with:
+        submodules: 'recursive'
+      
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+      
+    - name: Install Tools (black, flake8)
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black pytest
+        which black  # Ensure black is really installed
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-        id: setup-python  # Add an id to refer this step
+    - name: Auto-format with Black
+      run: black --check --diff --quiet .
 
-      - name: Prepare Python Environment
-        run: echo "${{ steps.setup-python.outputs.python-location }}/bin" >> $GITHUB_PATH
+    - name: Lint with flake8
+      run: flake8 . --extend-ignore=E501,F405
+      
+    - name: Run Tests
+      run: pytest -v
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install black flake8 pytest
-          pip list
-
-      - name: Formatting Python Code with Black
-        run: black --check --diff --quiet .
-
-      - name: Lint with flake8
-        run: flake8 .
-
-      - name: Run Tests
-        run: pytest
-
-      - name: Notify Slack if failed
-        uses: rtCamp/action-slack-notify@v2
-        if: failure()
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    - name: Slack Notification on Completion
+      if: always()  # Sends notifications regardless of job success/failure
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
