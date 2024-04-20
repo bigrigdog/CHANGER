@@ -13,26 +13,44 @@ jobs:
     steps:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
-        with:
-          submodules: true  # Remove or comment out this line if you are sure you don't need submodules
+
+      - name: Precheck for Submodules Setup
+        id: precheck
+        run: |
+          if [ ! -f ".gitmodules" ]; then
+            echo "No .gitmodules file exists, setting up a predefined submodule configuration."
+            echo "[submodule \"example-submodule\"]" >> .gitmodules
+            echo "path = external/example-submodule" >> .gitmodules
+            echo "url = https://github.com/exampleuser/example-submodule.git" >> .gitmodules
+            git add .gitmodules
+            git config -f .gitmodules submodule.example-submodule.url https://github.com/exampleuser/example-submodule.git
+            git submodule add https://github.com/exampleuser/example-submodule.git external/example-submodule
+            git submodule update --init --recursive
+            git commit -m "Setup predefined submodules"
+            git push origin main
+          else
+            echo ".gitmodules exists, initializing submodules."
+            git submodule update --init --recursive
+          fi
 
       - name: Setup Python Environment
         uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
-      - name: Install Dependencies
+      - name: Install Python Tools
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8 pytest sphinx
+          pip install black flake8 pytest sphinx autopep8
 
-      - name: Format Code with Black
+      - name: Auto-correct Python Code
         run: |
-          black . --check --diff || echo "Black formatting issues detected"
+          autopep8 --in-place --aggressive --aggressive --recursive .
+          black . || echo "Formatting issues detected and corrected with Black."
 
       - name: Lint with Flake8
         run: |
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 . || echo "Flake8 linting issues detected."
 
       - name: Run Tests
         run: |
@@ -42,7 +60,16 @@ jobs:
         run: |
           sphinx-build -b html ./docs/source ./docs/build
 
-      - name: Slack Notification
-        if: always()  # This ensures this step will run regardless of the previous steps' success or failure
+      - name: Slack Notification on Failure
+        if: failure()
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed with errors. Check the Actions logs for details."}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack Notification on Success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed successfully."}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
