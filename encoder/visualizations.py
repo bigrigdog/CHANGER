@@ -5,28 +5,36 @@ import numpy as np
 import umap
 import visdom
 
-from encoder.data_objects.speaker_verification_dataset import SpeakerVerificationDataset
+from encoder.data_objects.speaker_verification_dataset import \
+    SpeakerVerificationDataset
 
-
-colormap = np.array([
-    [76, 255, 0],
-    [0, 127, 70],
-    [255, 0, 0],
-    [255, 217, 38],
-    [0, 135, 255],
-    [165, 0, 165],
-    [255, 167, 255],
-    [0, 255, 255],
-    [255, 96, 38],
-    [142, 76, 0],
-    [33, 0, 127],
-    [0, 0, 0],
-    [183, 183, 183],
-], dtype=np.float) / 255
+colormap = (
+    np.array(
+        [
+            [76, 255, 0],
+            [0, 127, 70],
+            [255, 0, 0],
+            [255, 217, 38],
+            [0, 135, 255],
+            [165, 0, 165],
+            [255, 167, 255],
+            [0, 255, 255],
+            [255, 96, 38],
+            [142, 76, 0],
+            [33, 0, 127],
+            [0, 0, 0],
+            [183, 183, 183],
+        ],
+        dtype=np.float,
+    )
+    / 255
+)
 
 
 class Visualizations:
-    def __init__(self, env_name=None, update_every=10, server="http://localhost", disabled=False):
+    def __init__(
+        self, env_name=None, update_every=10, server="http://localhost", disabled=False
+    ):
         # Tracking data
         self.last_update_timestamp = timer()
         self.update_every = update_every
@@ -49,10 +57,13 @@ class Visualizations:
 
         # Connect to visdom and open the corresponding window in the browser
         try:
-            self.vis = visdom.Visdom(server, env=self.env_name, raise_exceptions=True)
+            self.vis = visdom.Visdom(
+                server, env=self.env_name, raise_exceptions=True)
         except ConnectionError:
-            raise Exception("No visdom server detected. Run the command \"visdom\" in your CLI to "
-                            "start it.")
+            raise Exception(
+                'No visdom server detected. Run the command "visdom" in your CLI to '
+                "start it."
+            )
         # webbrowser.open("http://localhost:8097/env/" + self.env_name)
 
         # Create the windows
@@ -66,8 +77,8 @@ class Visualizations:
     def log_params(self):
         if self.disabled:
             return
-        from encoder import params_data
-        from encoder import params_model
+        from encoder import params_data, params_model
+
         param_string = "<b>Model parameters</b>:<br>"
         for param_name in (p for p in dir(params_model) if not p.startswith("__")):
             value = getattr(params_model, param_name)
@@ -96,8 +107,7 @@ class Visualizations:
             implementation_string = implementation_string.replace("\n", "<br>")
         self.implementation_string = implementation_string
         self.implementation_win = self.vis.text(
-            implementation_string,
-            opts={"title": "Training implementation"}
+            implementation_string, opts={"title": "Training implementation"}
         )
 
     def update(self, loss, eer, step):
@@ -112,10 +122,14 @@ class Visualizations:
         # Update the plots every <update_every> steps
         if step % self.update_every != 0:
             return
-        time_string = "Step time:  mean: %5dms  std: %5dms" % \
-                      (int(np.mean(self.step_times)), int(np.std(self.step_times)))
-        print("\nStep %6d   Loss: %.4f   EER: %.4f   %s" %
-              (step, np.mean(self.losses), np.mean(self.eers), time_string))
+        time_string = "Step time:  mean: %5dms  std: %5dms" % (
+            int(np.mean(self.step_times)),
+            int(np.std(self.step_times)),
+        )
+        print(
+            "\nStep %6d   Loss: %.4f   EER: %.4f   %s"
+            % (step, np.mean(self.losses), np.mean(self.eers), time_string)
+        )
         if not self.disabled:
             self.loss_win = self.vis.line(
                 [np.mean(self.losses)],
@@ -127,7 +141,7 @@ class Visualizations:
                     xlabel="Step",
                     ylabel="Loss",
                     title="Loss",
-                )
+                ),
             )
             self.eer_win = self.vis.line(
                 [np.mean(self.eers)],
@@ -138,8 +152,8 @@ class Visualizations:
                     legend=["Avg. EER"],
                     xlabel="Step",
                     ylabel="EER",
-                    title="Equal error rate"
-                )
+                    title="Equal error rate",
+                ),
             )
             if self.implementation_win is not None:
                 self.vis.text(
@@ -153,11 +167,13 @@ class Visualizations:
         self.eers.clear()
         self.step_times.clear()
 
-    def draw_projections(self, embeds, utterances_per_speaker, step, out_fpath=None, max_speakers=10):
+    def draw_projections(
+        self, embeds, utterances_per_speaker, step, out_fpath=None, max_speakers=10
+    ):
         import matplotlib.pyplot as plt
 
         max_speakers = min(max_speakers, len(colormap))
-        embeds = embeds[:max_speakers * utterances_per_speaker]
+        embeds = embeds[: max_speakers * utterances_per_speaker]
 
         n_speakers = len(embeds) // utterances_per_speaker
         ground_truth = np.repeat(np.arange(n_speakers), utterances_per_speaker)
@@ -169,7 +185,8 @@ class Visualizations:
         plt.gca().set_aspect("equal", "datalim")
         plt.title("UMAP projection (step %d)" % step)
         if not self.disabled:
-            self.projection_win = self.vis.matplot(plt, win=self.projection_win)
+            self.projection_win = self.vis.matplot(
+                plt, win=self.projection_win)
         if out_fpath is not None:
             plt.savefig(out_fpath)
         plt.clf()

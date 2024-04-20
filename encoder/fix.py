@@ -1,6 +1,7 @@
 import fileinput
-import re
 import os
+import re
+
 
 def fix_resample_usage(directory):
     for subdir, dirs, files in os.walk(directory):

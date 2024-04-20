@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 
 class HelpTab(QWidget):
     def __init__(self):

@@ -1,14 +1,16 @@
+from pathlib import Path
+from typing import List, Union
+
+import librosa
+import numpy as np
 import torch
+
 from synthesizer import audio
 from synthesizer.hparams import hparams
 from synthesizer.models.tacotron import Tacotron
 from synthesizer.utils.symbols import symbols
 from synthesizer.utils.text import text_to_sequence
 from vocoder.display import simple_table
-from pathlib import Path
-from typing import Union, List
-import numpy as np
-import librosa
 
 
 class Synthesizer:
@@ -46,30 +48,38 @@ class Synthesizer:
         """
         Instantiates and loads the model given the weights file that was passed in the constructor.
         """
-        self._model = Tacotron(embed_dims=hparams.tts_embed_dims,
-                               num_chars=len(symbols),
-                               encoder_dims=hparams.tts_encoder_dims,
-                               decoder_dims=hparams.tts_decoder_dims,
-                               n_mels=hparams.num_mels,
-                               fft_bins=hparams.num_mels,
-                               postnet_dims=hparams.tts_postnet_dims,
-                               encoder_K=hparams.tts_encoder_K,
-                               lstm_dims=hparams.tts_lstm_dims,
-                               postnet_K=hparams.tts_postnet_K,
-                               num_highways=hparams.tts_num_highways,
-                               dropout=hparams.tts_dropout,
-                               stop_threshold=hparams.tts_stop_threshold,
-                               speaker_embedding_size=hparams.speaker_embedding_size).to(self.device)
+        self._model = Tacotron(
+            embed_dims=hparams.tts_embed_dims,
+            num_chars=len(symbols),
+            encoder_dims=hparams.tts_encoder_dims,
+            decoder_dims=hparams.tts_decoder_dims,
+            n_mels=hparams.num_mels,
+            fft_bins=hparams.num_mels,
+            postnet_dims=hparams.tts_postnet_dims,
+            encoder_K=hparams.tts_encoder_K,
+            lstm_dims=hparams.tts_lstm_dims,
+            postnet_K=hparams.tts_postnet_K,
+            num_highways=hparams.tts_num_highways,
+            dropout=hparams.tts_dropout,
+            stop_threshold=hparams.tts_stop_threshold,
+            speaker_embedding_size=hparams.speaker_embedding_size,
+        ).to(self.device)
 
         self._model.load(self.model_fpath)
         self._model.eval()
 
         if self.verbose:
-            print("Loaded synthesizer \"%s\" trained to step %d" % (self.model_fpath.name, self._model.state_dict()["step"]))
+            print(
+                'Loaded synthesizer "%s" trained to step %d'
+                % (self.model_fpath.name, self._model.state_dict()["step"])
+            )
 
-    def synthesize_spectrograms(self, texts: List[str],
-                                embeddings: Union[np.ndarray, List[np.ndarray]],
-                                return_alignments=False):
+    def synthesize_spectrograms(
+        self,
+        texts: List[str],
+        embeddings: Union[np.ndarray, List[np.ndarray]],
+        return_alignments=False,
+    ):
         """
         Synthesizes mel spectrograms from texts and speaker embeddings.
 
@@ -86,15 +96,21 @@ class Synthesizer:
             self.load()
 
         # Preprocess text inputs
-        inputs = [text_to_sequence(text.strip(), hparams.tts_cleaner_names) for text in texts]
+        inputs = [
+            text_to_sequence(text.strip(), hparams.tts_cleaner_names) for text in texts
+        ]
         if not isinstance(embeddings, list):
             embeddings = [embeddings]
 
         # Batch inputs
-        batched_inputs = [inputs[i:i+hparams.synthesis_batch_size]
-                             for i in range(0, len(inputs), hparams.synthesis_batch_size)]
-        batched_embeds = [embeddings[i:i+hparams.synthesis_batch_size]
-                             for i in range(0, len(embeddings), hparams.synthesis_batch_size)]
+        batched_inputs = [
+            inputs[i: i + hparams.synthesis_batch_size]
+            for i in range(0, len(inputs), hparams.synthesis_batch_size)
+        ]
+        batched_embeds = [
+            embeddings[i: i + hparams.synthesis_batch_size]
+            for i in range(0, len(embeddings), hparams.synthesis_batch_size)
+        ]
 
         specs = []
         for i, batch in enumerate(batched_inputs, 1):
@@ -108,14 +124,16 @@ class Synthesizer:
             chars = np.stack(chars)
 
             # Stack speaker embeddings into 2D array for batch processing
-            speaker_embeds = np.stack(batched_embeds[i-1])
+            speaker_embeds = np.stack(batched_embeds[i - 1])
 
             # Convert to tensor
             chars = torch.tensor(chars).long().to(self.device)
-            speaker_embeddings = torch.tensor(speaker_embeds).float().to(self.device)
+            speaker_embeddings = torch.tensor(
+                speaker_embeds).float().to(self.device)
 
             # Inference
-            _, mels, alignments = self._model.generate(chars, speaker_embeddings)
+            _, mels, alignments = self._model.generate(
+                chars, speaker_embeddings)
             mels = mels.detach().cpu().numpy()
             for m in mels:
                 # Trim silence from end of each spectrogram

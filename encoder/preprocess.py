@@ -7,18 +7,20 @@ import numpy as np
 from tqdm import tqdm
 
 from encoder import audio
-from encoder.config import librispeech_datasets, anglophone_nationalites
+from encoder.config import anglophone_nationalites, librispeech_datasets
 from encoder.params_data import *
 
-
 _AUDIO_EXTENSIONS = ("wav", "flac", "m4a", "mp3")
+
 
 class DatasetLog:
     """
     Registers metadata about the dataset in a text file.
     """
+
     def __init__(self, root, name):
-        self.text_file = open(Path(root, "Log_%s.txt" % name.replace("/", "_")), "w")
+        self.text_file = open(Path(root, "Log_%s.txt" %
+                              name.replace("/", "_")), "w")
         self.sample_data = dict()
 
         start_time = str(datetime.now().strftime("%A %d %B %Y at %H:%M"))
@@ -28,6 +30,7 @@ class DatasetLog:
 
     def _log_params(self):
         from encoder import params_data
+
         self.write_line("Parameter values:")
         for param_name in (p for p in dir(params_data) if not p.startswith("__")):
             value = getattr(params_data, param_name)
@@ -47,23 +50,31 @@ class DatasetLog:
         self.write_line("Statistics:")
         for param_name, values in self.sample_data.items():
             self.write_line("\t%s:" % param_name)
-            self.write_line("\t\tmin %.3f, max %.3f" % (np.min(values), np.max(values)))
-            self.write_line("\t\tmean %.3f, median %.3f" % (np.mean(values), np.median(values)))
+            self.write_line("\t\tmin %.3f, max %.3f" %
+                            (np.min(values), np.max(values)))
+            self.write_line(
+                "\t\tmean %.3f, median %.3f" % (
+                    np.mean(values), np.median(values))
+            )
         self.write_line("-----")
         end_time = str(datetime.now().strftime("%A %d %B %Y at %H:%M"))
         self.write_line("Finished on %s" % end_time)
         self.text_file.close()
 
 
-def _init_preprocess_dataset(dataset_name, datasets_root, out_dir) -> (Path, DatasetLog):
+def _init_preprocess_dataset(
+    dataset_name, datasets_root, out_dir
+) -> (Path, DatasetLog):
     dataset_root = datasets_root.joinpath(dataset_name)
     if not dataset_root.exists():
-        print("Couldn\'t find %s, skipping this dataset." % dataset_root)
+        print("Couldn't find %s, skipping this dataset." % dataset_root)
         return None, None
     return dataset_root, DatasetLog(out_dir, dataset_name)
 
 
-def _preprocess_speaker(speaker_dir: Path, datasets_root: Path, out_dir: Path, skip_existing: bool):
+def _preprocess_speaker(
+    speaker_dir: Path, datasets_root: Path, out_dir: Path, skip_existing: bool
+):
     # Give a name to the speaker that includes its dataset
     speaker_name = "_".join(speaker_dir.relative_to(datasets_root).parts)
 
@@ -115,14 +126,24 @@ def _preprocess_speaker(speaker_dir: Path, datasets_root: Path, out_dir: Path, s
     return audio_durs
 
 
-def _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger):
-    print("%s: Preprocessing data for %d speakers." % (dataset_name, len(speaker_dirs)))
+def _preprocess_speaker_dirs(
+    speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger
+):
+    print("%s: Preprocessing data for %d speakers." %
+          (dataset_name, len(speaker_dirs)))
 
     # Process the utterances for each speaker
-    work_fn = partial(_preprocess_speaker, datasets_root=datasets_root, out_dir=out_dir, skip_existing=skip_existing)
+    work_fn = partial(
+        _preprocess_speaker,
+        datasets_root=datasets_root,
+        out_dir=out_dir,
+        skip_existing=skip_existing,
+    )
     with Pool(4) as pool:
         tasks = pool.imap(work_fn, speaker_dirs)
-        for sample_durs in tqdm(tasks, dataset_name, len(speaker_dirs), unit="speakers"):
+        for sample_durs in tqdm(
+            tasks, dataset_name, len(speaker_dirs), unit="speakers"
+        ):
             for sample_dur in sample_durs:
                 logger.add_sample(duration=sample_dur)
 
@@ -133,19 +154,25 @@ def _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir,
 def preprocess_librispeech(datasets_root: Path, out_dir: Path, skip_existing=False):
     for dataset_name in librispeech_datasets["train"]["other"]:
         # Initialize the preprocessing
-        dataset_root, logger = _init_preprocess_dataset(dataset_name, datasets_root, out_dir)
+        dataset_root, logger = _init_preprocess_dataset(
+            dataset_name, datasets_root, out_dir
+        )
         if not dataset_root:
             return
 
         # Preprocess all speakers
         speaker_dirs = list(dataset_root.glob("*"))
-        _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger)
+        _preprocess_speaker_dirs(
+            speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger
+        )
 
 
 def preprocess_voxceleb1(datasets_root: Path, out_dir: Path, skip_existing=False):
     # Initialize the preprocessing
     dataset_name = "VoxCeleb1"
-    dataset_root, logger = _init_preprocess_dataset(dataset_name, datasets_root, out_dir)
+    dataset_root, logger = _init_preprocess_dataset(
+        dataset_name, datasets_root, out_dir
+    )
     if not dataset_root:
         return
 
@@ -155,30 +182,46 @@ def preprocess_voxceleb1(datasets_root: Path, out_dir: Path, skip_existing=False
 
     # Select the ID and the nationality, filter out non-anglophone speakers
     nationalities = {line[0]: line[3] for line in metadata}
-    keep_speaker_ids = [speaker_id for speaker_id, nationality in nationalities.items() if
-                        nationality.lower() in anglophone_nationalites]
-    print("VoxCeleb1: using samples from %d (presumed anglophone) speakers out of %d." %
-          (len(keep_speaker_ids), len(nationalities)))
+    keep_speaker_ids = [
+        speaker_id
+        for speaker_id, nationality in nationalities.items()
+        if nationality.lower() in anglophone_nationalites
+    ]
+    print(
+        "VoxCeleb1: using samples from %d (presumed anglophone) speakers out of %d."
+        % (len(keep_speaker_ids), len(nationalities))
+    )
 
     # Get the speaker directories for anglophone speakers only
     speaker_dirs = dataset_root.joinpath("wav").glob("*")
-    speaker_dirs = [speaker_dir for speaker_dir in speaker_dirs if
-                    speaker_dir.name in keep_speaker_ids]
-    print("VoxCeleb1: found %d anglophone speakers on the disk, %d missing (this is normal)." %
-          (len(speaker_dirs), len(keep_speaker_ids) - len(speaker_dirs)))
+    speaker_dirs = [
+        speaker_dir
+        for speaker_dir in speaker_dirs
+        if speaker_dir.name in keep_speaker_ids
+    ]
+    print(
+        "VoxCeleb1: found %d anglophone speakers on the disk, %d missing (this is normal)."
+        % (len(speaker_dirs), len(keep_speaker_ids) - len(speaker_dirs))
+    )
 
     # Preprocess all speakers
-    _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger)
+    _preprocess_speaker_dirs(
+        speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger
+    )
 
 
 def preprocess_voxceleb2(datasets_root: Path, out_dir: Path, skip_existing=False):
     # Initialize the preprocessing
     dataset_name = "VoxCeleb2"
-    dataset_root, logger = _init_preprocess_dataset(dataset_name, datasets_root, out_dir)
+    dataset_root, logger = _init_preprocess_dataset(
+        dataset_name, datasets_root, out_dir
+    )
     if not dataset_root:
         return
 
     # Get the speaker directories
     # Preprocess all speakers
     speaker_dirs = list(dataset_root.joinpath("dev", "aac").glob("*"))
-    _preprocess_speaker_dirs(speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger)
+    _preprocess_speaker_dirs(
+        speaker_dirs, dataset_name, datasets_root, out_dir, skip_existing, logger
+    )

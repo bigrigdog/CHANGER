@@ -1,5 +1,8 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox
+from PyQt5.QtWidgets import (QLabel, QMessageBox, QPushButton, QTextEdit,
+                             QVBoxLayout, QWidget)
+
 from utils.voice_cloning_utils import clone_voice
+
 
 class CloningTab(QWidget):
     def __init__(self):
@@ -23,8 +26,10 @@ class CloningTab(QWidget):
         input_text = self.text_edit.toPlainText()
         try:
             cloned_audio = clone_voice(input_text)
-            self.result_label.setText("Cloning successful. Check the output folder.")
+            self.result_label.setText(
+                "Cloning successful. Check the output folder.")
             # Assuming you have a function to handle the playback or saving of cloned audio
         except Exception as e:
-            QMessageBox.critical(self, "Error", "Failed to clone voice: " + str(e))
+            QMessageBox.critical(
+                self, "Error", "Failed to clone voice: " + str(e))
             self.result_label.setText("An error occurred. Please try again.")
