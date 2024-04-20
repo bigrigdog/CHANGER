@@ -1,0 +1,33 @@
+name: Fix Line Lengths
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  fix-line-lengths:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install black
+
+      - name: Fix line lengths
+        run: python fix_line_lengths.py
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Fix line lengths in Python files" || echo "No changes to commit"
+          git push
