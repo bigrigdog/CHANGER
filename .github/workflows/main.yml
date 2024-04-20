@@ -47,6 +47,12 @@ jobs:
         run: |
           find . -name "*.tmp" -delete
 
+      - name: Prepare Slack Notification
+        id: prep
+        shell: bash
+        run: |
+          echo "::set-output name=color::$(if [[ '${{ job.status }}' == 'success' ]]; then echo 'good'; else echo 'danger'; fi)"
+
       - name: Notify on Slack with Workflow Status
         if: always()  # This ensures that the notification step will run regardless of previous steps' success or failure.
         uses: rtCamp/action-slack-notify@v2
@@ -58,7 +64,7 @@ jobs:
               "text": "Workflow *${{ github.workflow }}* on *${{ github.repository }}*",
               "attachments": [
                 {
-                  "color": "${{ job.status == 'success' ? 'good' : 'danger' }}",
+                  "color": "${{ steps.prep.outputs.color }}",
                   "fields": [
                     {"title": "Job", "value": "${{ github.job }}", "short": true},
                     {"title": "Status", "value": "${{ job.status }}", "short": true},
