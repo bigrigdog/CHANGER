@@ -14,6 +14,24 @@ jobs:
       - name: Checkout Repository Code
         uses: actions/checkout@v3
 
+      # Add a step to check and fix formatting
+      - name: Check and Fix Formatting
+        run: |
+          # Install Black if not already installed
+          pip install black
+          
+          # Check for formatting issues
+          black --check --diff .
+
+          # If issues found, fix them
+          if [ $? -ne 0 ]; then
+            black .
+            git add .
+            git diff-index --quiet HEAD || git commit -m "Fix formatting issues" && git push origin main
+          else
+            echo "No formatting issues found."
+          fi
+
       - name: Auto Setup .gitmodules and Submodules
         run: |
           if [ ! -f ".gitmodules" ]; then
@@ -41,12 +59,7 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-cov flake8 black autopep8
-
-      - name: Auto-correct Python Code
-        run: |
-          autopep8 --in-place --aggressive --aggressive --recursive .
-          black . --check --diff || black .
+          pip install pytest pytest-cov flake8 autopep8
 
       - name: Lint with Flake8
         run: |
@@ -64,11 +77,18 @@ jobs:
           [ ! -f "docs/conf.py" ] && sphinx-quickstart -q --sep -p "Project Name" -a "Author Name" -v "0.1" --ext-autodoc --ext-viewcode --makefile -o docs
           sphinx-build -b html docs/source docs/build
 
-      - name: Slack Notification
-        if: always()
-        uses: rtCamp/action-slack-notify@v2
+      - name: Slack Notification on Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          text: 'Pipeline ${{ job.status }} for commit ${{ github.sha }} in ${{ github.repository }}.'
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack Notification on Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
