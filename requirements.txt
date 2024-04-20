@@ -112,7 +112,7 @@ python-dateutil==2.9.0
 python-dotenv==0.19.1
 python-jsonrpc-server==0.3.4
 python-language-server==0.36.2
-pytzdata==2021.5
+pytzdata==2020.1
 pyzmq==26.0.2
 qtconsole==5.2.1
 QtPy==1.11.2
