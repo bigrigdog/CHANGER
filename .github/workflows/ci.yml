@@ -81,4 +81,3 @@ jobs:
           git config --global --add safe.directory /home/runner/work/CHANGER/CHANGER
           git config --local --name-only --get-regexp core.sshCommand
           git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
-```
