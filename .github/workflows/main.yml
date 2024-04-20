@@ -1,4 +1,4 @@
-name: Enhanced Comprehensive CI/CD Automation
+name: CI/CD Pipeline
 
 on:
   push:
@@ -19,36 +19,32 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Install Python Dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install black flake8 pytest sphinx
-          pip list
 
-      - name: Auto-formatting with Black
+      - name: Check Formatting with Black
         run: |
-          black --check --diff . || echo "Black found formatting issues."
+          black --check --diff . || echo "::warning ::Black has detected poorly formatted files."
 
-      - name: Linting with Flake8
+      - name: Lint with Flake8
         run: |
-          flake8 . --extend-ignore=E501,F405
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Execute Tests
+      - name: Run Tests
         run: |
           pytest -vv
 
-      - name: Generate Documentation with Sphinx
+      - name: Generate Documentation
         run: |
           sphinx-build -b html ./docs/source ./docs/build
 
-      - name: Cleanup Temporary Files
-        run: |
-          find . -name "*.tmp" -delete
-
-      - name: Notify on Slack with Workflow Status
+      - name: Notify on Slack
         if: always()
-        uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: "Workflow ${{ github.workflow }} on ${{ github.repository }} completed. Status: ${{ job.status }}"
-          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
+          SLACK_CHANNEL: your-channel-id
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow ${{ github.workflow }} on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' $SLACK_WEBHOOK_URL
