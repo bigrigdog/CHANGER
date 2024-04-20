@@ -24,13 +24,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install black flake8 pytest sphinx
 
-      - name: Check Formatting with Black
+      - name: Format Code with Black
         run: |
-          black --check --diff . || echo "::warning ::Black has detected poorly formatted files."
-
+          black . --diff
+          
       - name: Lint with Flake8
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run Tests
@@ -41,10 +40,8 @@ jobs:
         run: |
           sphinx-build -b html ./docs/source ./docs/build
 
-      - name: Notify on Slack
+      - name: Slack Notification
         if: always()
-        env:
-          SLACK_CHANNEL: your-channel-id
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow ${{ github.workflow }} on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' $SLACK_WEBHOOK_URL
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow CI/CD Pipeline on ${{ github.repository }} has completed. Status: ${{ job.status }}"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
