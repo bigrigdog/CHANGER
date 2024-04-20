@@ -32,7 +32,11 @@ jobs:
 
       - name: Auto-formatting with Black and Linting with Flake8
         run: |
-          black --check --diff --quiet .
+          black --check --diff .
+          if [ $? -ne 0 ]; then
+            echo "Code formatting issues found."
+            exit 1  # Fail the workflow if formatting issues are found
+          fi
           flake8 . --extend-ignore=E501,F405
 
       - name: Execute Tests
@@ -54,7 +58,7 @@ jobs:
           echo "::set-output name=color::$(if [[ '${{ job.status }}' == 'success' ]]; then echo 'good'; else echo 'danger'; fi)"
 
       - name: Notify on Slack with Workflow Status
-        if: always()  # This ensures that the notification step will run regardless of previous steps' success or failure.
+        if: always()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
