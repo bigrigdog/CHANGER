@@ -51,7 +51,6 @@ jobs:
       - name: Setup environment for heavyweight operations
         run: echo "Setting up heavyweight operations environment"
 
-      # Here we assume cloud training: Implement or replace this to suit your cloud/ML job submission.
       - name: Trigger Cloud Machine Learning Training
         env:
           JOB_SUBMISSION_TOKEN: ${{ secrets.JOB_SUBMISSION_TOKEN }}
@@ -60,7 +59,7 @@ jobs:
           curl -X POST $CLOUD_PLATFORM_ENDPOINT \
             -H "Authorization: Bearer $JOB_SUBMISSION_TOKEN" \
             --data "config=quick-start-model-training.yaml"
-        if: github.event_name == 'schedule' or github.event_type == 'workflow_dispatch'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
   notify:
     needs: model-training
