@@ -25,9 +25,12 @@ jobs:
           pip install black flake8 pytest sphinx
           pip list
 
-      - name: Auto-formatting with Black and Linting with Flake8
+      - name: Auto-formatting with Black
         run: |
-          black --check --diff . || echo "Black found formatting issues" && false
+          black --check --diff . || echo "Black found formatting issues."
+
+      - name: Linting with Flake8
+        run: |
           flake8 . --extend-ignore=E501,F405
 
       - name: Execute Tests
@@ -43,14 +46,9 @@ jobs:
           find . -name "*.tmp" -delete
 
       - name: Notify on Slack with Workflow Status
-        if: always()  # Ensures this step runs whether previous steps failed or succeeded.
+        if: always()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        with:
-          status: ${{ job.status }}
-          channel: C0708A8KK97
-          username: GitHub Actions
-          icon_url: https://avatars3.githubusercontent.com/u/44036562?s=200&v=4
-          title: Workflow Execution Result
-          text: "The workflow *${{ github.workflow }}* on *${{ github.repository }}* has completed."
+          SLACK_MESSAGE: "Workflow ${{ github.workflow }} on ${{ github.repository }} completed. Status: ${{ job.status }}"
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
