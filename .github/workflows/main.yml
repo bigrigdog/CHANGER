@@ -20,8 +20,8 @@ jobs:
             echo "Creating .gitmodules because it does not exist"
             echo "[submodule \"externals/repo\"]" >> .gitmodules
             echo "path = externals/repo" >> .gitmodules
-            echo "url = https://github.com/yourusername/your-repo.git" >> .gitmodules
-            git submodule add https://github.com/yourusername/your-repo.git externals/repo
+            echo "url = https://github.com/bigrigdog/CHANGER.git" >> .gitmodules
+            git submodule add https://github.com/bigrigdog/CHANGER.git externals/repo
           fi
           git submodule update --init --recursive
 
